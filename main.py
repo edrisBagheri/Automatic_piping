@@ -9,6 +9,20 @@ class Node():
         self.coord = coord
 
 
+class Pipe():
+    def __init__(self, segments):
+        self.segments = segments
+        self.lenght = self.calc_lengh()
+
+    def calc_lengh(self):
+        start = self.segments[0]
+        end = self.segments[-1]
+        seg = np.array([start, end])
+        len = np.diff(seg, axis=0)
+        return np.linalg.norm(len).astype(np.int32)
+
+
+
 class PathFinder():
     def __init__(self, sources, target, maze, scheme):
         self.sources = sources
@@ -137,16 +151,6 @@ class PathFinder():
         self.layout.extend(path)
         return path
 
-    def performant_path_finding(self, row, col, elev):
-        graph, coord_node_map, node_coord_map = self.build_graph(self.maze)
-        source = coord_node_map[(row, col, elev)]
-        target = coord_node_map[self.target.coord]
-
-        path_nodes = nx.shortest_path(graph, source=source, target=target)
-
-        path_coords = [node_coord_map[i] for i in path_nodes]
-
-        return path_coords
 
 
     def build_graph(self, maze):
@@ -227,21 +231,49 @@ def find_juction_placement(layout, coords,  target_coord_dic, coord_target_dic):
     print(layout, coords)
 
 
-def finding_piping_layout(sources,target, maze):
+def finding_piping_layout(sources,target, maze, scheme):
      # this dictionaries will be sufull for general purpose application and findin the neighbouring target more efficiently
-     sources_coord_dic = sort_sources(sources,target)
-
      # scheme 0: dfs, 1: bfs, 2: a_star
-     path_finder = PathFinder(sources, target, maze, scheme=2)
+     path_finder = PathFinder(sources, target, maze, scheme)
+     t_connections = []
+     paths_coords = []
+     if path_finder.scheme==2:
+        graph, coord_node_map, node_coord_map = path_finder.build_graph(maze)
+        sources_ids = []
+        for s in sources:
+            sources_ids.append(coord_node_map[s.coord])
+        target_id = coord_node_map[target.coord]
 
-     paths = []
-     for source  in  range(len(sources)):
-        coords = sources_coord_dic[source]
-        path = path_finder.find_path(coords)
-        paths.append(path)
+        layout = [target_id]
+        counter = 0
+        paths = []
+        for sources_id in sources_ids:
+            # shortest_paths = PathFinder.find_path()
+            shortest_paths = nx.multi_source_dijkstra(graph, sources=layout, target=sources_id)
+            path = shortest_paths[1]
+            paths.append(path)
+            if counter != 0:
+                t_connections.append(path[0])
+            # path.pop(0) # make sure connection is not in layout twice
+            layout.extend(path)
+            counter += 1
 
-     # visualization.draw_paths_3D(paths)
-     return paths, path_finder.t_connections
+
+        for p in paths:
+            path_coord = []
+            for node in p:
+                path_coord.append(node_coord_map[node])
+            paths_coords.append(path_coord)
+     else:
+         sources_coord_dic = sort_sources(sources, target)
+
+         for source  in  range(len(sources)):
+            coords = sources_coord_dic[source]
+            path = path_finder.find_path(coords)
+            paths_coords.append(path)
+         t_connections.append(path_finder.t_connections)
+         # visualization.draw_paths_3D(paths)
+     return paths_coords, t_connections
 
 
 
@@ -254,7 +286,7 @@ def cal_material_bill(paths):
 
 def setput_problem_1():
     # creat geometry
-    maze = create_maze()
+    # maze = create_maze()
     maze = create_maze()
     sources = [Node((0, 0, 1), (2, 0, 3)), Node((0, 0, 1), (4, 0, 3))]
     target = Node((0, 0, -1), (0, 4, 5))
@@ -278,22 +310,61 @@ def setput_problem_2():
              ]
     for box in boxes:
         maze[box[0]:box[1], box[2]:box[3], box[4]:box[5]] = 1
+    cabinet = (0,24,0,30,0,24)
+    # visualization.geometry_visualize(cabinet, boxes)
+
     sources = [Node((0, 0, 1), (9, 9, 13)), Node((0, 0, 1), (9, 23, 13))]
     target = Node((-1, 0, 0), (23, 14, 5))
-    return maze, sources, target
+
+    ax = visualization.geometry_visualize(cabinet, boxes, target, sources)
+
+    return maze, sources, target, ax
+
+def calc_material_schedule(paths):
+    pipe_layout = []
+    for path in paths:
+        pipe_layout.extend(path)
+
+    diff = np.diff(np.array(pipe_layout), axis=0)
+
+    pipe = [pipe_layout[0]]
+    temp_direction = diff[0]
+
+    pipes = []
+    for seg_id, segment in enumerate(pipe_layout[1:]):
+        if np.all(temp_direction == diff[seg_id]):
+            pipe.append(segment)
+        else:
+            pipes.append(pipe)
+            pipe = []
+            temp_direction = diff[seg_id]
+
+    pipe_list = []
+    for p in pipes:
+        if p:
+            pipe_list.append(Pipe(p))
+
+    return pipe_list
 
 def main():
     # maze,sources, target = setput_proble_1()
-    maze, sources, target = setput_problem_2()
-    paths, t_connections = finding_piping_layout(sources, target, maze)
+    maze, sources, target, ax = setput_problem_2()
+    paths, t_connections = finding_piping_layout(sources, target, maze, scheme=2)
+    pipe_list = calc_material_schedule(paths)
+
+
     # test_path_finder = PathFinder(sources, (0, 4, 5), maze)
     # total_pipe_lenght = cal_material_bill(paths)
     # path = test_path_finder.find_path((3, 0, 3))
     # paths= []
     # paths.append(path)
     print('t connection are occure at',  t_connections)
+    for p_id, p in enumerate(pipe_list):
+        print("-------------------------------------")
+        print("pipe: ", p_id, "lenght: ", p.lenght)
+        print("segment coordinate", p.segments)
     # print('total pipe lenght:', total_pipe_lenght)
-    visualization.draw_paths_3D(paths)
+    visualization.draw_paths_3D(paths, ax)
 
 
     # print(test_path_finder.find_path())
