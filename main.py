@@ -129,7 +129,7 @@ class PathFinder():
         while (path_is_finded == False):
             dead_end = True
             for drow, dcol, delev in directions:
-                new_row, new_col , new_elev = row + drow, col + dcol, elev + delev
+                new_row, new_col, new_elev = row + drow, col + dcol, elev + delev
                 if self.is_valid(new_row, new_col, new_elev):
                     if not self.visited[new_row, new_col, new_elev] or (new_row, new_col, new_elev) in self.layout:
                         # once we have more that one path in layout the that are visited also are valid
@@ -197,18 +197,7 @@ class PathFinder():
         return graph, coord_node_map, node_coord_map
 
 
-def create_maze():
 
-    maze = np.zeros((6,6,6), dtype=np.int32)
-    # -----------------------------------------------------------------------------
-    # geometry consist of diffrent boxes as an obstacle to be subtractet from domain
-    # each box ned a boundig box
-    boxes = [(0,6,0,2,0,3)]
-    for box in boxes:
-        maze[box[0]:box[1], box[2]:box[3], box[4]:box[5]] = 1
-
-
-    return maze
 
 
 
@@ -284,15 +273,31 @@ def cal_material_bill(paths):
         total += len(p)-1
     return total
 
-def setput_problem_1():
+def setup_problem_1():
     # creat geometry
-    # maze = create_maze()
-    maze = create_maze()
+    maze = np.zeros((6,6,6), dtype=np.int32)
+    # -----------------------------------------------------------------------------
+    # geometry consist of diffrent boxes as an obstacle to be subtractet from domain
+    # each box ned a boundig box
+    boxes = [(0,6,0,2,0,3)]
+    for box in boxes:
+        maze[box[0]:box[1], box[2]:box[3], box[4]:box[5]] = 1
+
+    cabinet = (0,6,0,6,0,6)
+    # visualization.geometry_visualize(cabinet, boxes)
+
+
     sources = [Node((0, 0, 1), (2, 0, 3)), Node((0, 0, 1), (4, 0, 3))]
     target = Node((0, 0, -1), (0, 4, 5))
-    return maze, sources, target
 
-def setput_problem_2():
+    ax = visualization.geometry_visualize(cabinet, boxes, target, sources)
+
+
+    return maze, sources, target, ax
+
+
+
+def setup_problem_2():
     # create maze(adjaicency matrix) that represent the geometry
     maze = np.zeros((24, 30, 24), dtype=np.int32)
     # -----------------------------------------------------------------------------
@@ -319,6 +324,37 @@ def setput_problem_2():
     ax = visualization.geometry_visualize(cabinet, boxes, target, sources)
 
     return maze, sources, target, ax
+
+def setup_problem_3():
+    # create maze(adjaicency matrix) that represent the geometry
+    maze = np.zeros((240, 300, 240), dtype=np.int32)
+    # -----------------------------------------------------------------------------
+    # geometry consist of diffrent boxes as an obstacle to be subtractet from domain
+    # each box ned a boundig box
+    boxes = [( 0,   80,   0, 300,  0,  120),
+             ( 80, 190,  30, 270,  0,  120),
+             ( 30, 190,  30,  60, 120, 240),
+             ( 30, 190, 240, 270, 120, 240),
+             ( 30,  60,  60, 240, 120, 200),
+             ( 60, 120, 110, 190, 120, 200),
+             (160, 190,  60, 240, 120, 240),
+             ( 30,  60,  60, 120, 120, 240),
+             ( 30,  60, 180, 240, 120, 240)
+             ]
+    for box in boxes:
+        maze[box[0]:box[1], box[2]:box[3], box[4]:box[5]] = 1
+    cabinet = (0, 240, 0, 300, 0, 240)
+    # visualization.geometry_visualize(cabinet, boxes)
+
+    sources = [Node((0, 0, 1), (90, 90, 130)), Node((0, 0, 1), (90, 230, 130))]
+    target = Node((-1, 0, 0), (230, 140, 50))
+
+    ax = visualization.geometry_visualize(cabinet, boxes, target, sources)
+
+    return maze, sources, target, ax
+
+
+
 
 def calc_material_schedule(paths):
     pipe_layout = []
@@ -347,8 +383,13 @@ def calc_material_schedule(paths):
     return pipe_list
 
 def main():
-    # maze,sources, target = setput_proble_1()
-    maze, sources, target, ax = setput_problem_2()
+
+    maze,sources, target, ax = setup_problem_1()
+    #
+    # maze, sources, target, ax = setup_problem_2()
+
+    # maze, sources, target, ax = setup_problem_3()
+
     paths, t_connections = finding_piping_layout(sources, target, maze, scheme=2)
     pipe_list = calc_material_schedule(paths)
 

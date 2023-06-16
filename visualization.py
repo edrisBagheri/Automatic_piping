@@ -83,7 +83,7 @@ def geometry_visualize(cabinet,boxes, target, sources):
             x = [coord[0] for coord in e]
             y = [coord[1] for coord in e]
             z = [coord[2] for coord in e]
-            ax.plot(x, y, z, 'b-', color='black',  linewidth=0.4)
+            ax.plot(x, y, z, color='black',  linewidth=0.4)
     ax.scatter(target.coord[0], target.coord[1], target.coord[2], color='red')
 
     for s in sources:
@@ -99,7 +99,7 @@ def draw_paths_3D(paths, ax):
 
 
         # Plot the polyline
-        ax.plot(x, y, z, 'b-', color='green')
+        ax.plot(x, y, z, color='green')
 
 
     # Display the plot
@@ -109,7 +109,7 @@ def draw_paths_3D(paths, ax):
 def main():
     # test_path  = [[(0,0), (0,1), (0,2), (1,2), (2,2)]]
     # draw_paths_2D(test_path)
-    test_3D_path = [[(0,0,0), (0,0,1), (0,0,2),(0,1,2),(0,2,2),(1,2,2)]]
+    test_3D_path = [[(0, 0, 0), (0, 0, 1), (0, 0, 2), (0, 1, 2), (0, 2, 2), (1, 2, 2)]]
     draw_paths_3D(test_3D_path)
 if __name__ == '__main__':
     main()
